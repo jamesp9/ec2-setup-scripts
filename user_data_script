@@ -2,7 +2,7 @@
 
 # Install needed packages
 apt-get update -y
-apt-get install -y tmux vim git htop build-essential
+apt-get install -y tmux vim git htop build-essential cmake
 
 # Retrieve EC2 setup scripts
 git clone https://github.com/jamesp9/ec2-setup-scripts.git /root/ec2-setup-scripts
