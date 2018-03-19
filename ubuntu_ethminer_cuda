@@ -1,0 +1,56 @@
+#!/bin/bash
+
+STRATUM_SERVER="${1}"
+ETHEREUM_ADDRESS="${2}"
+RIG_NAME="${3}"
+USERNAME="ubuntu"
+DOTFILES_PATH="/home/${USERNAME}/.dotfiles"
+ETHMINER_CHEKCOUT_PATH="/home/${USERNAME}/ethminer"
+
+
+# Get CUDA from Nvidia
+cd /root
+wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
+dpkg -i cuda-repo-ubuntu1604_9.1.85-1_amd64.deb
+apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
+apt-get update -y
+apt-get install -y cuda
+
+# Update environment
+cp /etc/environment /etc/environment.bak
+echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/local/cuda-9.1/bin"' > /etc/environment
+
+# Install my dotfiles for convenience
+git clone https://github.com/jamesp9/dotfiles ${DOTFILES_PATH}
+chown -R ${USERNAME}: ${DOTFILES_PATH}
+
+# Download ethminer source and build for CUDA
+git clone https://github.com/ethereum-mining/ethminer.git ${ETHMINER_CHEKCOUT_PATH}
+cd ${ETHMINER_CHEKCOUT_PATH}
+git submodule update --init --recursive
+mkdir build; cd build
+cmake -DETHASHCUDA=ON -DETHASHCL=OFF ..
+cmake --build . -- -j4
+chown -R ${USERNAME}: ${ETHMINER_CHEKCOUT_PATH}
+
+# Load Nvidia module
+modprobe nvidia
+
+# Systemd service file
+cat <<EndOfUnitFile > /etc/systemd/system/ethminer.service
+[Unit]
+Description=ethminer
+After=network.target
+
+[Service]
+Type=simple
+User=${USERNAME}
+Group=${USERNAME}
+ExecStart=/home/${USERNAME}/ethminer/build/ethminer/ethminer --farm-recheck 200 -U -S ${STRATUM_SERVER}:4444 -FS ${STRATUM_SERVER}:14444 -O ${ETHEREUM_ADDRESS}.${RIG_NAME}
+
+[Install]
+WantedBy=multi-user.target
+EndOfUnitFile
+
+systemctl daemon-reload
+systemctl enable --now ethminer.service
