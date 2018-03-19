@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Install needed packages
+apt-get update -y
+apt-get install -y tmux vim git htop build-essential
+
+# Retrieve EC2 setup scripts
+git clone https://github.com/jamesp9/ec2-setup-scripts.git /root/ec2-setup-scripts
+# Replace STRATUM_SERVER ETHEREUM_ADDRESS RIG_NAME with real values when using this for User Data
+bash /root/ec2-setup-scripts/ubuntu_ethminer_cuda STRATUM_SERVER ETHEREUM_ADDRESS RIG_NAME
