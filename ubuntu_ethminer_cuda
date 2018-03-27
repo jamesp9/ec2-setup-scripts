@@ -53,4 +53,5 @@ WantedBy=multi-user.target
 EndOfUnitFile
 
 systemctl daemon-reload
-systemctl enable --now ethminer.service
+systemctl enable ethminer.service
+systemctl start ethminer.service
